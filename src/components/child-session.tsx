@@ -13,6 +13,7 @@ export function ChildSession({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const [view, setView] = useState<ChildSessionView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [parentError, setParentError] = useState<string | null>(null);
   const [gate, setGate] = useState(false);
   const [pin, setPin] = useState("");
   const [note, setNote] = useState("");
@@ -80,8 +81,9 @@ export function ChildSession({ sessionId }: { sessionId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view?.quietToken, view?.quietAfterMs]);
 
-  async function send(body: unknown) {
+  async function send(body: unknown, where: "child" | "parent" = "child"): Promise<boolean> {
     setError(null);
+    setParentError(null);
     try {
       const result = await api<SessionActionResponse>(`/api/sessions/${sessionId}/actions`, {
         method: "POST",
@@ -96,8 +98,12 @@ export function ChildSession({ sessionId }: { sessionId: string }) {
         router.push("/parent");
         router.refresh();
       }
+      return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Try again");
+      const message = err instanceof Error ? err.message : "Try again";
+      if (where === "parent") setParentError(message);
+      else setError(childSafeMessage(message));
+      return false;
     }
   }
 
@@ -230,13 +236,14 @@ export function ChildSession({ sessionId }: { sessionId: string }) {
             className="mt-1 h-12 w-full rounded-xl border px-3 text-lg"
           />
           <div className="mt-3 grid gap-2">
-            <GateButton label="I am here" onClick={() => void send({ action: "parent_present", pin })} />
-            <GateButton label="Mark complete" onClick={() => void send({ action: "parent_approve", pin, outcome: "completed" })} />
-            <GateButton label="Mark partly done" onClick={() => void send({ action: "parent_approve", pin, outcome: "partial" })} />
-            <GateButton label="Skip this activity" onClick={() => void send({ action: "parent_skip", pin })} />
-            <GateButton label="Try one small step together" onClick={() => void send({ action: "parent_offer_again", pin })} />
-            <GateButton label="Confirm stars" onClick={() => void send({ action: "parent_validate_rewards", pin })} />
-            <GateButton label="Back to parent screen" onClick={() => void send({ action: "parent_exit", pin })} />
+            <GateButton label="I am here" onClick={() => void send({ action: "parent_present", pin }, "parent")} />
+            <GateButton label="Mark complete" onClick={() => void send({ action: "parent_approve", pin, outcome: "completed" }, "parent")} />
+            <GateButton label="Mark partly done" onClick={() => void send({ action: "parent_approve", pin, outcome: "partial" }, "parent")} />
+            <GateButton label="Skip this activity" onClick={() => void send({ action: "parent_skip", pin }, "parent")} />
+            <GateButton label="Try one small step together" onClick={() => void send({ action: "parent_offer_again", pin }, "parent")} />
+            <GateButton label="Confirm stars" onClick={() => void send({ action: "parent_validate_rewards", pin }, "parent")} />
+            <GateButton label="Back to parent screen" onClick={() => void send({ action: "parent_exit", pin }, "parent")} />
+            {parentError ? <p className="text-sm text-destructive">{parentError}</p> : null}
           </div>
           {view.pendingRewards.length > 0 ? (
             <ul className="mt-3 text-sm">
@@ -251,7 +258,16 @@ export function ChildSession({ sessionId }: { sessionId: string }) {
           <button
             type="button"
             className="mt-2 text-sm font-semibold underline"
-            onClick={() => void send({ action: "parent_observation", pin, note }).then(() => setNote(""))}
+            onClick={() => {
+              const trimmed = note.trim();
+              if (!trimmed) {
+                setParentError("Write a short note first.");
+                return;
+              }
+              void send({ action: "parent_observation", pin, note: trimmed }, "parent").then((saved) => {
+                if (saved) setNote("");
+              });
+            }}
           >
             Save observation
           </button>
@@ -260,6 +276,13 @@ export function ChildSession({ sessionId }: { sessionId: string }) {
       ) : null}
     </main>
   );
+}
+
+function childSafeMessage(message: string): string {
+  if (/string must contain|invalid_type|expected|unrecognized/i.test(message)) {
+    return "That didn't work. You can press a button.";
+  }
+  return message;
 }
 
 function GateButton({ label, onClick }: { label: string; onClick: () => void }) {

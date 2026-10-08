@@ -57,6 +57,9 @@ describe("session policy", () => {
   it("rejects stored transcripts and ended-session restarts", () => {
     const parsed = sessionActionSchema.safeParse({ action: "child_intent", intent: "ready", transcript: "hello" });
     expect(parsed.success).toBe(false);
+    const emptyNote = sessionActionSchema.safeParse({ action: "parent_observation", pin: "2468", note: "  " });
+    expect(emptyNote.success).toBe(false);
+    if (!emptyNote.success) expect(emptyNote.error.issues[0]?.message).toBe("Write a short note first.");
     expect(canRestartEndedSession()).toBe(false);
     expect(pinAttemptAllowed([{ at: 0 }, { at: 1 }, { at: 2 }, { at: 3 }, { at: 4 }], 5)).toBe(false);
     expect(pinAttemptAllowed([{ at: 0 }], 10 * 60 * 1000)).toBe(true);

@@ -155,7 +155,7 @@ const parentRewards = z.object({
 const parentObservation = z.object({
   action: z.literal("parent_observation"),
   pin,
-  note: z.string().trim().min(1).max(500),
+  note: z.string().trim().min(1, "Write a short note first.").max(500, "Keep the note under 500 characters."),
 }).strict();
 
 const parentExit = z.object({

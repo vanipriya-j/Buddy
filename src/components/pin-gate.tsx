@@ -50,7 +50,7 @@ export function PinGate({ mode }: { mode: "login" | "locked" }) {
           maxLength={6}
           value={pin}
           onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 6))}
-          className="mt-2 h-14 text-center text-2xl tracking-[0.4em]"
+          className="mt-2 h-14 overflow-hidden text-center text-2xl tracking-[0.2em]"
         />
         {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
         <Button type="submit" className="mt-4 h-12 w-full text-base" disabled={pending || pin.length < 4}>

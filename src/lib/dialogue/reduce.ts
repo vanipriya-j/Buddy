@@ -36,6 +36,7 @@ const WORK_BUTTONS: CoachButton[] = [
   { id: "help", label: "I need help", intent: "help" },
   { id: "break", label: "Break", intent: "break" },
   { id: "done", label: "I'm done", intent: "done" },
+  { id: "refusal", label: "Not now", intent: "refusal" },
 ];
 
 const QUIET_BUTTONS: CoachButton[] = [
@@ -43,6 +44,7 @@ const QUIET_BUTTONS: CoachButton[] = [
   { id: "help", label: "I need help", intent: "help" },
   { id: "break", label: "Break", intent: "break" },
   { id: "done", label: "I'm done", intent: "done" },
+  { id: "refusal", label: "Not now", intent: "refusal" },
 ];
 
 const BREAK_BUTTONS: CoachButton[] = [
@@ -57,6 +59,7 @@ const SMALLER_BUTTONS: CoachButton[] = [
 const PARENT_HELP_BUTTONS: CoachButton[] = [
   { id: "try", label: "I'll try", intent: "ready" },
   { id: "help", label: "I need my parent", intent: "help" },
+  { id: "refusal", label: "Not now", intent: "refusal" },
 ];
 
 export function initialCoachState(): CoachState {

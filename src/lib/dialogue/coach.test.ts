@@ -80,9 +80,11 @@ describe("coaching state machine", () => {
   it("stops prompting after repeated refusal and does not shame", () => {
     let state = initialCoachState();
     const context = ctx("kumon");
-    for (let count = 0; count < 3; count += 1) {
-      state = reduceCoach(state, { type: "child_intent", intent: "refusal" }, context).state;
-    }
+    const first = reduceCoach(state, { type: "child_intent", intent: "refusal" }, context);
+    expect(first.effect.buttons.some((button) => button.intent === "refusal")).toBe(true);
+    const second = reduceCoach(first.state, { type: "child_intent", intent: "refusal" }, context);
+    expect(second.effect.buttons.some((button) => button.intent === "refusal")).toBe(true);
+    state = reduceCoach(second.state, { type: "child_intent", intent: "refusal" }, context).state;
     expect(state.promptStopped).toBe(true);
     expect(state.phase).toBe("refusal_stopped");
     const again = reduceCoach(state, { type: "child_intent", intent: "ready" }, context);

@@ -91,7 +91,9 @@ function labelStatus(item: ProgressActivity): string {
   if (item.status === "partial") return "partly done";
   if (item.status === "skipped") return "skipped";
   if (item.status === "scheduled") return "not started";
-  return "attempted";
+  if (item.status === "ready") return "ready";
+  if (item.status === "needs_help") return "needs support";
+  return "in progress";
 }
 
 function assertNeutral(summary: ProgressSummary): void {
