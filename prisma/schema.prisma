@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Parent {
+  id           String         @id @default(cuid())
+  name         String
+  pinHash      String
+  createdAt    DateTime       @default(now())
+  child        Child?
+  activities   Activity[]
+  templates    WeeklyTemplate[]
+  sessions     Session[]
+  observations Observation[]
+}
+
+model Child {
+  id       String    @id @default(cuid())
+  parentId String    @unique
+  parent   Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  name     String
+  sessions Session[]
+}
+
+model WeeklyTemplate {
+  id          String     @id @default(cuid())
+  parentId    String
+  parent      Parent     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  name        String
+  description String     @default("")
+  activities  Activity[]
+  createdAt   DateTime   @default(now())
+}
+
+model Activity {
+  id                 String          @id @default(cuid())
+  parentId           String
+  parent             Parent          @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  templateId         String?
+  template           WeeklyTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  isLive             Boolean         @default(true)
+  title              String
+  instructions       String          @default("")
+  category           String
+  sequence           Int
+  scheduledTime      String?
+  estimatedMinutes   Int
+  daily              Boolean         @default(false)
+  recurrenceDays     String          @default("[]")
+  priority           String          @default("normal")
+  stepCount          Int             @default(3)
+  breakAfter         Boolean         @default(false)
+  breakMinutes       Int             @default(5)
+  rewardStars        Int             @default(1)
+  rewardNote         String          @default("")
+  completionCriteria String          @default("")
+  learningNotes      String          @default("")
+  configJson         String          @default("{}")
+  onlyDate           String?
+  active             Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  materials          Material[]
+  instances          DailyInstance[]
+
+  @@index([parentId, isLive, active])
+}
+
+model Material {
+  id         String   @id @default(cuid())
+  activityId String
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  filename   String
+  mimeType   String
+  kind       String
+  storageKey String
+  createdAt  DateTime @default(now())
+}
+
+model DailyInstance {
+  id               String    @id @default(cuid())
+  activityId       String
+  activity         Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  date             String
+  sequence         Int
+  estimatedMinutes Int
+  baselineMinutes  Int
+  included         Boolean   @default(true)
+  autoSkipped      Boolean   @default(false)
+  status           String    @default("scheduled")
+  refusalCount     Int       @default(0)
+  helpCount        Int       @default(0)
+  breakCount       Int       @default(0)
+  activeSeconds    Int       @default(0)
+  workAnchor       DateTime?
+  coachJson        String    @default("")
+  completionNote   String    @default("")
+  startedAt        DateTime?
+  endedAt          DateTime?
+  rewards          Reward[]
+
+  @@unique([activityId, date])
+  @@index([date])
+}
+
+model Session {
+  id                     String         @id @default(cuid())
+  parentId               String
+  parent                 Parent         @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  childId                String
+  child                  Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  date                   String
+  status                 String         @default("active")
+  startedAt              DateTime       @default(now())
+  endedAt                DateTime?
+  limitMinutes           Int
+  buttonsOnly            Boolean        @default(false)
+  parentPresentAt        DateTime
+  lastCheckInAt          DateTime
+  checkInIntervalMinutes Int            @default(10)
+  currentInstanceId      String?
+  coachJson              String         @default("")
+  greeted                Boolean        @default(false)
+  events                 SessionEvent[]
+  rewards                Reward[]
+
+  @@index([parentId, date])
+}
+
+model SessionEvent {
+  id         String   @id @default(cuid())
+  sessionId  String
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  instanceId String?
+  kind       String
+  payload    String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+model Reward {
+  id         String         @id @default(cuid())
+  sessionId  String
+  session    Session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  instanceId String?
+  instance   DailyInstance? @relation(fields: [instanceId], references: [id], onDelete: SetNull)
+  kind       String
+  stars      Int
+  validated  Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+}
+
+model Observation {
+  id         String   @id @default(cuid())
+  parentId   String
+  parent     Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  date       String
+  instanceId String?
+  note       String
+  createdAt  DateTime @default(now())
+
+  @@index([parentId, date])
+}
