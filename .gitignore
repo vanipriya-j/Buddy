@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+dist
+.vercel
+*.tsbuildinfo
+.env
+data/*.db
+data/*.db-journal
+data/uploads/*
+!data/uploads/.gitkeep
+coverage
+.DS_Store
