@@ -1,8 +1,7 @@
 import { randomBytes } from "crypto";
-import fs from "fs/promises";
-import path from "path";
 import { hashPin } from "../src/lib/auth";
 import { prisma } from "../src/lib/db";
+import { putObject } from "../src/lib/storage";
 
 const DEMO_PIN = "2468";
 
@@ -197,14 +196,12 @@ const schoolWeek: ActivitySeed[] = [
 ];
 
 async function writeDemoFiles() {
-  const dir = path.join(process.cwd(), "data", "uploads");
-  await fs.mkdir(dir, { recursive: true });
   const audioKey = randomBytes(16).toString("hex");
   const lyricsKey = randomBytes(16).toString("hex");
   const worksheetKey = randomBytes(16).toString("hex");
-  await fs.writeFile(path.join(dir, audioKey), wavTone());
-  await fs.writeFile(path.join(dir, lyricsKey), "Sri Gananatha — practise the first line slowly.\n");
-  await fs.writeFile(path.join(dir, worksheetKey), "Kumon note: two addition worksheets. The instructor checks the answers.\n");
+  await putObject(audioKey, wavTone(), "audio/wav");
+  await putObject(lyricsKey, Buffer.from("Sri Gananatha — practise the first line slowly.\n"), "text/plain");
+  await putObject(worksheetKey, Buffer.from("Kumon note: two addition worksheets. The instructor checks the answers.\n"), "text/plain");
   return { audioKey, lyricsKey, worksheetKey };
 }
 

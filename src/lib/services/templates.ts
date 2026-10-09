@@ -1,10 +1,9 @@
 import { randomBytes } from "crypto";
-import fs from "fs/promises";
 import type { AuthToken } from "@/lib/auth";
 import { assertParentMode } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseRecurrenceDays } from "@/lib/recurrence";
-import { safeUploadPath, ensureUploadDir } from "@/lib/uploads";
+import { copyObject } from "@/lib/storage";
 import type { TemplateView } from "@/lib/views";
 import { ServiceError } from "@/lib/services/errors";
 import { ensureDailyPlan } from "@/lib/services/daily-plan";
@@ -132,14 +131,10 @@ async function copyActivity(
       onlyDate: activity.onlyDate,
     },
   });
-  await ensureUploadDir();
   for (const material of activity.materials) {
     const storageKey = randomBytes(16).toString("hex");
-    try {
-      await fs.copyFile(safeUploadPath(material.storageKey), safeUploadPath(storageKey));
-    } catch {
-      continue;
-    }
+    const copied = await copyObject(material.storageKey, storageKey, material.mimeType);
+    if (!copied) continue;
     await prisma.material.create({
       data: {
         activityId: created.id,
