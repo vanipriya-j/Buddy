@@ -1,11 +1,10 @@
 import { randomBytes } from "crypto";
-import fs from "fs/promises";
 import type { AuthToken } from "@/lib/auth";
 import { assertParentMode } from "@/lib/auth";
 import { isCategory } from "@/lib/categories";
 import { prisma } from "@/lib/db";
 import { moveInList, parseRecurrenceDays } from "@/lib/recurrence";
-import { ensureUploadDir, safeUploadPath } from "@/lib/uploads";
+import { deleteObject, putObject } from "@/lib/storage";
 import { ALLOWED_MATERIAL_TYPES, MAX_MATERIAL_BYTES, materialKindFor, parseActivityInput, type ActivityInput } from "@/lib/validation";
 import type { ActivityView } from "@/lib/views";
 import { ServiceError } from "@/lib/services/errors";
@@ -154,8 +153,7 @@ export async function saveMaterial(
     throw new ServiceError("Files need to be under 8 MB", 400);
   }
   const storageKey = randomBytes(16).toString("hex");
-  await ensureUploadDir();
-  await fs.writeFile(safeUploadPath(storageKey), file.bytes);
+  await putObject(storageKey, file.bytes, file.type);
   await prisma.material.create({
     data: {
       activityId: activity.id,
@@ -176,9 +174,7 @@ export async function deleteMaterial(auth: AuthToken, materialId: string): Promi
   if (!material) throw new ServiceError("Material not found", 404);
   await prisma.material.delete({ where: { id: material.id } });
   const stillUsed = await prisma.material.count({ where: { storageKey: material.storageKey } });
-  if (stillUsed === 0) {
-    await fs.unlink(safeUploadPath(material.storageKey)).catch(() => undefined);
-  }
+  if (stillUsed === 0) await deleteObject(material.storageKey);
 }
 
 export async function readMaterial(auth: AuthToken, materialId: string) {

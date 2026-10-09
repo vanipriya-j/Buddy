@@ -15,7 +15,23 @@ npm run dev
 
 Open http://localhost:3000 and sign in with PIN `2468`. Change that PIN from the parent screen after you sign in.
 
-The database is SQLite at `data/buddy.db`. Uploaded worksheets, lyrics, and reference audio live in `data/uploads`.
+With no Supabase settings, Buddy keeps the schedule in a Postgres database at `data/pglite` and worksheets in `data/uploads`. That stays on this computer and does not need the internet after install. `npm run dev` creates the database and applies migrations. Run `npm run db:setup` once to load the example week.
+
+## Supabase
+
+Supabase is optional. The parent still signs in with the PIN. Supabase does not replace that login.
+
+To keep the schedule and files in your Supabase project, set these in `.env` from Project Settings → Database and API:
+
+- `DATABASE_URL` — transaction pooler, port `6543`, with `?pgbouncer=true` at the end
+- `DIRECT_URL` — session pooler or direct connection, port `5432`. Migrations use this.
+- `SUPABASE_URL` — `https://<project-ref>.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY` — server only. Do not put this in the browser.
+- `SUPABASE_STORAGE_BUCKET` — `materials`
+
+Create a private Storage bucket named `materials`. The first upload also tries to create it with the service role key. The service role key stays on the server. Aaroh's screen still loads files through Buddy, and the bucket is not public.
+
+Then run `npm run db:setup` so the tables and the example week are created in Supabase. On Vercel, set the same variables before the first deploy. A remote database needs the internet. Leave the variables unset when you want the local database.
 
 ## A session
 
@@ -75,4 +91,5 @@ The tests cover PIN checks, recurrence, state transitions, refusal, parent appro
 - `src/lib/services` — schedule, sessions, templates, progress
 - `src/app/parent` — schedule and reports
 - `src/app/child` — Aaroh's screen
-- `prisma` — SQLite schema, migration, and example week
+- `prisma` — Postgres schema, migration, and example week
+- `src/lib/storage.ts` — local files, or a private Supabase Storage bucket when configured

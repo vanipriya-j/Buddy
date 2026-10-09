@@ -7,6 +7,7 @@ dist
 .env
 data/*.db
 data/*.db-journal
+data/pglite/
 data/uploads/*
 !data/uploads/.gitkeep
 coverage
